@@ -2,6 +2,7 @@ package users
 
 import (
 	"fmt"
+	"microservices-bookstore_users/utils/date_utils"
 	"microservices-bookstore_users/utils/errors"
 )
 
@@ -30,6 +31,7 @@ func (user *User) Save() *errors.RestError {
 		}
 		return errors.NewBadRequestError(fmt.Sprintf("User %d already exists ", user.Id))
 	}
+	user.DateCreated = date_utils.GetNowString()
 	userDB[user.Id] = user
 	return nil
 }
