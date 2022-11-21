@@ -14,6 +14,24 @@ var (
 	counter int
 )
 
+func GetUser(c *gin.Context) {
+	userId, userErr := strconv.ParseInt(c.Param("user_id"), 10, 64)
+	if userErr != nil {
+		err := errors.NewBadRequestError("Invalid user id")
+		c.JSON(err.Status, err)
+		return
+	}
+
+	user, getErr := services.GetUser(userId)
+	if getErr != nil {
+		//TODO: Handle user creation error
+		c.JSON(getErr.Status, getErr)
+		return
+	}
+	c.JSON(http.StatusOK, user)
+
+}
+
 func CreateUser(c *gin.Context) {
 	var user users.User
 	if err := c.ShouldBindJSON(&user); err != nil {
@@ -33,21 +51,33 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, result)
 }
 
-func GetUser(c *gin.Context) {
+func UpdateUser(c *gin.Context) {
 	userId, userErr := strconv.ParseInt(c.Param("user_id"), 10, 64)
-	if userErr == nil {
-		err := errors.NewBadRequestError("Invalid user id")
+	if userErr != nil {
+		err := errors.NewBadRequestError("user id should be a number")
 		c.JSON(err.Status, err)
 		return
 	}
 
-	user, getErr := services.GetUser(userId)
-	if getErr != nil {
-		//TODO: Handle user creation error
-		c.JSON(getErr.Status, getErr)
+	var user users.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		//TODO: Return bad request to the caller.
+		restErr := errors.NewBadRequestError("Invalid json body")
+		c.JSON(http.StatusBadRequest, restErr)
 		return
 	}
-	c.JSON(http.StatusOK, user)
+
+	user.Id = userId
+
+	isPartial := c.Request.Method == http.MethodPatch
+
+	result, updateErr := services.UpdateUser(isPartial, user)
+	if updateErr != nil {
+		//TODO: Handle user creation error
+		c.JSON(updateErr.Status, updateErr)
+		return
+	}
+	c.JSON(http.StatusOK, result)
 
 }
 
